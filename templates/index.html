@@ -61,9 +61,23 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .controls input[type="range"] {
+        .time-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .time-control label {
+            font-weight: bold;
+            min-width: 100px;
+        }
+
+        .time-control input[type="range"] {
             width: 300px;
         }
 
@@ -71,6 +85,45 @@
             font-size: 1.2rem;
             font-weight: bold;
             min-width: 150px;
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .animation-controls button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .animation-controls button:hover {
+            background: #45a049;
+        }
+
+        .animation-controls button:active {
+            background: #3d8b40;
+        }
+
+        .airport-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 20px;
+        }
+
+        .airport-selector select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            min-width: 200px;
         }
 
         .reachable-circle {
@@ -140,10 +193,18 @@
             <div class="visualization-container">
                 <div class="map-container" id="map"></div>
                 <div class="controls">
+                    <div class="airport-selector">
+                        <label for="departureAirport">Departure Airport:</label>
+                        <select id="departureAirport"></select>
+                    </div>
                     <div class="time-control">
-                        <label for="timeSlider">Flying Time: </label>
+                        <label for="timeSlider">Flying Time:</label>
                         <input type="range" id="timeSlider" min="0" max="48" value="0" step="1">
                         <span id="currentTime">Flying Time: 0h 0m</span>
+                        <div class="animation-controls">
+                            <button id="playButton">▶️ Play</button>
+                            <button id="pauseButton">⏸️ Pause</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -152,7 +213,11 @@
 
     <script>
         let data = null;
-        let currentHours = 0;
+        let airports = null;
+        let currentTime = 0;
+        let animationInterval = null;
+        let isAnimating = false;
+        let currentZoom = 1;
         let tooltip = d3.select('body')
             .append('div')
             .attr('class', 'tooltip')
@@ -182,17 +247,54 @@
             return html;
         }
 
-        function fetchData(hours) {
-            fetch(`/api/reachable?hours=${hours}`)
-                .then(response => response.json())
-                .then(responseData => {
-                    data = responseData;
-                    drawMap();
-                });
+        function startAnimation() {
+            if (isAnimating) return;
+            isAnimating = true;
+            currentTime = 0;
+            
+            // Clear any existing interval
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+            
+            // Update time slider to match animation
+            timeSlider.value = currentTime;
+            document.getElementById('currentTime').textContent = `Flying Time: ${formatHours(currentTime)}`;
+            
+            // Start animation
+            animationInterval = setInterval(() => {
+                currentTime += 1;
+                if (currentTime > 48) {
+                    currentTime = 0;
+                    timeSlider.value = 0;
+                    document.getElementById('currentTime').textContent = `Flying Time: ${formatHours(currentTime)}`;
+                }
+                timeSlider.value = currentTime;
+                document.getElementById('currentTime').textContent = `Flying Time: ${formatHours(currentTime)}`;
+                fetchData();
+            }, 1000); // Update every second
+        }
+
+        function stopAnimation() {
+            if (!isAnimating) return;
+            isAnimating = false;
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+        }
+
+        function updateTextSizes(zoom) {
+            currentZoom = zoom;
+            d3.selectAll('.airport-label')
+                .style('font-size', `${12 / zoom}px`);
+            
+            d3.selectAll('.tooltip')
+                .style('font-size', `${12 / zoom}px`);
         }
 
         function drawMap() {
-            if (!data) return;
+            if (!data || !airports) return;
 
             const margin = { top: 20, right: 20, bottom: 30, left: 40 };
             const width = document.getElementById('map').clientWidth - margin.left - margin.right;
@@ -210,9 +312,22 @@
 
             // Create projection
             const projection = d3.geoMercator()
-                .scale(100)
-                .center([0, 0])
+                .scale(150)
+                .center([0, 20])
                 .translate([width / 2, height / 2]);
+
+            // Create zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([1, 8])
+                .on('zoom', (event) => {
+                    svg.attr('transform', event.transform);
+                    updateTextSizes(event.transform.k);
+                });
+
+            // Add zoom to the map container
+            d3.select('#map svg')
+                .call(zoom)
+                .on('dblclick.zoom', null); // Disable double-click zoom
 
             // Create path generator
             const path = d3.geoPath().projection(projection);
@@ -220,12 +335,12 @@
             // Load world map data
             d3.json('https://unpkg.com/world-atlas@2/countries-110m.json')
                 .then(worldData => {
-                    const countries = topojson.feature(worldData, worldData.objects.countries);
+                    const world = topojson.feature(worldData, worldData.objects.countries);
 
-                    // Draw world map
+                    // Draw world map first
                     svg.append('g')
                         .selectAll('path')
-                        .data(countries.features)
+                        .data(world.features)
                         .enter()
                         .append('path')
                         .attr('d', path)
@@ -233,87 +348,168 @@
                         .attr('stroke', '#bdbdbd')
                         .attr('stroke-width', 0.5);
 
-                    // Draw reachable destinations
-                    data.reachable.forEach(dest => {
-                        const isReachable = dest.flying_hours <= currentHours;
-
-                        // Draw connection line
-                        svg.append('line')
-                            .attr('class', `flight-path ${isReachable ? 'reachable' : 'unreachable'}`)
-                            .attr('x1', projection(data.start.coordinates)[0])
-                            .attr('y1', projection(data.start.coordinates)[1])
-                            .attr('x2', projection(dest.coordinates)[0])
-                            .attr('y2', projection(dest.coordinates)[1]);
-
-                        // Draw destination point
+                    // Draw starting point first (always visible)
+                    const startPoint = projection(data.start.coordinates);
+                    if (startPoint) {
                         svg.append('circle')
-                            .attr('class', isReachable ? 'reachable-circle' : 'unreachable-circle')
-                            .attr('cx', projection(dest.coordinates)[0])
-                            .attr('cy', projection(dest.coordinates)[1])
-                            .attr('r', 6)
-                            .on('mouseover', function(event, d) {
-                                tooltip.transition()
-                                    .duration(200)
-                                    .style('opacity', .9);
-                                tooltip.html(
-                                    `${dest.city} (${dest.airport})<br/>
-                                    Total Flying Time: ${formatHours(dest.flying_hours)}<br/>
-                                    Hops: ${dest.hops}<br/>
-                                    <div class="path-details">
-                                        ${formatPathDetails(dest.path_details)}
-                                    </div>`
-                                )
-                                .style('left', (event.pageX + 10) + 'px')
-                                .style('top', (event.pageY - 28) + 'px');
-                            })
-                            .on('mouseout', function() {
-                                tooltip.transition()
-                                    .duration(500)
-                                    .style('opacity', 0);
-                            });
+                            .attr('cx', startPoint[0])
+                            .attr('cy', startPoint[1])
+                            .attr('r', 8)
+                            .attr('fill', '#f44336')
+                            .attr('stroke', 'white')
+                            .attr('stroke-width', 2);
 
-                        // Add airport label
                         svg.append('text')
                             .attr('class', 'airport-label')
-                            .attr('x', projection(dest.coordinates)[0] + 8)
-                            .attr('y', projection(dest.coordinates)[1] + 4)
-                            .text(dest.airport)
-                            .attr('opacity', isReachable ? 1 : 0.5);
+                            .attr('x', startPoint[0] + 8)
+                            .attr('y', startPoint[1] + 4)
+                            .text(data.start.airport)
+                            .attr('font-weight', 'bold');
+                    }
+
+                    // Draw reachable destinations
+                    data.reachable.forEach(dest => {
+                        const isReachable = dest.flying_hours <= currentTime;
+
+                        // Draw actual flight path segments
+                        if (dest.path_details && dest.path_details.length > 0) {
+                            dest.path_details.forEach((detail, index) => {
+                                if (detail.from) {
+                                    // Get coordinates for both airports
+                                    const fromAirport = detail.from.airport;
+                                    const toAirport = detail.to.airport;
+                                    
+                                    // Draw flight segment using actual airport coordinates
+                                    const start = projection(airports[fromAirport].coordinates);
+                                    const end = projection(airports[toAirport].coordinates);
+
+                                    if (start && end) {
+                                        svg.append('line')
+                                            .attr('class', `flight-path ${isReachable ? 'reachable' : 'unreachable'}`)
+                                            .attr('x1', start[0])
+                                            .attr('y1', start[1])
+                                            .attr('x2', end[0])
+                                            .attr('y2', end[1]);
+
+                                        // Draw intermediate point (except for the final destination)
+                                        if (index < dest.path_details.length - 1) {
+                                            svg.append('circle')
+                                                .attr('class', 'intermediate-point')
+                                                .attr('cx', end[0])
+                                                .attr('cy', end[1])
+                                                .attr('r', 4)
+                                                .attr('fill', '#ffd700')
+                                                .attr('stroke', 'white')
+                                                .attr('stroke-width', 2);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        // Draw destination point
+                        const destPoint = projection(dest.coordinates);
+                        if (destPoint) {
+                            svg.append('circle')
+                                .attr('class', isReachable ? 'reachable-circle' : 'unreachable-circle')
+                                .attr('cx', destPoint[0])
+                                .attr('cy', destPoint[1])
+                                .attr('r', 6)
+                                .on('mouseover', function(event, d) {
+                                    tooltip.transition()
+                                        .duration(200)
+                                        .style('opacity', .9);
+                                    tooltip.html(
+                                        `${dest.city} (${dest.airport})<br/>
+                                        Total Flying Time: ${formatHours(dest.flying_hours)}<br/>
+                                        Hops: ${dest.hops}<br/>
+                                        <div class="path-details">
+                                            ${formatPathDetails(dest.path_details)}
+                                        </div>`
+                                    )
+                                    .style('left', (event.pageX + 10) + 'px')
+                                    .style('top', (event.pageY - 28) + 'px');
+                                })
+                                .on('mouseout', function() {
+                                    tooltip.transition()
+                                        .duration(500)
+                                        .style('opacity', 0);
+                                });
+
+                            // Add airport label
+                            svg.append('text')
+                                .attr('class', 'airport-label')
+                                .attr('x', destPoint[0] + 8)
+                                .attr('y', destPoint[1] + 4)
+                                .text(dest.airport)
+                                .attr('opacity', isReachable ? 1 : 0.5);
+                        }
+                    });
+                });
+
+            // Update text sizes initially
+            updateTextSizes(1);
+        }
+
+        function populateAirportSelector() {
+            fetch('/api/airports')
+                .then(response => response.json())
+                .then(airports => {
+                    const selector = document.getElementById('departureAirport');
+                    selector.innerHTML = '';
+                    
+                    Object.entries(airports).forEach(([code, info]) => {
+                        const option = document.createElement('option');
+                        option.value = code;
+                        option.textContent = `${code} - ${info.city}`;
+                        selector.appendChild(option);
                     });
 
-                    // Draw starting point
-                    svg.append('circle')
-                        .attr('cx', projection(data.start.coordinates)[0])
-                        .attr('cy', projection(data.start.coordinates)[1])
-                        .attr('r', 8)
-                        .attr('fill', '#f44336')
-                        .attr('stroke', 'white')
-                        .attr('stroke-width', 2);
+                    // Set default value to JFK
+                    selector.value = 'JFK';
+                });
+        }
 
-                    svg.append('text')
-                        .attr('class', 'airport-label')
-                        .attr('x', projection(data.start.coordinates)[0] + 8)
-                        .attr('y', projection(data.start.coordinates)[1] + 4)
-                        .text(data.start.airport)
-                        .attr('font-weight', 'bold');
+        function fetchData() {
+            const departureAirport = document.getElementById('departureAirport').value;
+            fetch(`/api/reachable?hours=${timeSlider.value}&departure=${departureAirport}`)
+                .then(response => response.json())
+                .then(responseData => {
+                    data = responseData;
+                    airports = responseData.airports;
+                    drawMap();
                 });
         }
 
         // Time slider event listener with debounce
         let timeout;
         document.getElementById('timeSlider').addEventListener('input', (e) => {
-            currentHours = parseInt(e.target.value);
-            document.getElementById('currentTime').textContent = `Flying Time: ${formatHours(currentHours)}`;
+            currentTime = parseInt(e.target.value);
+            document.getElementById('currentTime').textContent = `Flying Time: ${formatHours(currentTime)}`;
             
             // Debounce the API calls
             clearTimeout(timeout);
             timeout = setTimeout(() => {
-                fetchData(currentHours);
+                fetchData();
             }, 100);
         });
 
-        // Initial data fetch
-        fetchData(currentHours);
+        // Add event listener for airport selector
+        document.getElementById('departureAirport').addEventListener('change', () => {
+            stopAnimation();
+            fetchData();
+        });
+
+        // Initial data fetch and airport selector population
+        populateAirportSelector();
+        fetchData();
+
+        // Update the animation controls
+        const playButton = document.getElementById('playButton');
+        const pauseButton = document.getElementById('pauseButton');
+
+        playButton.onclick = startAnimation;
+        pauseButton.onclick = stopAnimation;
     </script>
 </body>
 </html> 
