@@ -2,8 +2,14 @@ services:
   - type: web
     name: flight-reachability-map
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      pip install gunicorn
     startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.18 
+        value: 3.9.18
+      - key: NODE_VERSION
+        value: ""
+      - key: NODE_ENV
+        value: "" 
