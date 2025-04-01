@@ -366,4 +366,46 @@ FLIGHTS = [
     {"from": "TBU", "to": "AKL", "departure": "15:00", "arrival": "17:00", "flying_hours": 2.0},
     {"from": "APW", "to": "AKL", "departure": "16:00", "arrival": "18:00", "flying_hours": 2.0},
     {"from": "IPC", "to": "SCL", "departure": "17:00", "arrival": "19:00", "flying_hours": 2.0},
+    
+    # Trans-pacific flights
+    {"from": "DFW", "to": "NRT", "departure": "10:00", "arrival": "14:00", "flying_hours": 14.0},
+    {"from": "DFW", "to": "ICN", "departure": "11:00", "arrival": "15:00", "flying_hours": 14.0},
+    {"from": "DFW", "to": "PEK", "departure": "12:00", "arrival": "16:00", "flying_hours": 14.0},
+    {"from": "DFW", "to": "PVG", "departure": "13:00", "arrival": "17:00", "flying_hours": 14.0},
+    
+    {"from": "LAX", "to": "NRT", "departure": "10:00", "arrival": "14:00", "flying_hours": 11.0},
+    {"from": "LAX", "to": "ICN", "departure": "11:00", "arrival": "15:00", "flying_hours": 12.0},
+    {"from": "LAX", "to": "PEK", "departure": "12:00", "arrival": "16:00", "flying_hours": 12.0},
+    {"from": "LAX", "to": "PVG", "departure": "13:00", "arrival": "17:00", "flying_hours": 13.0},
+    
+    {"from": "SFO", "to": "NRT", "departure": "10:00", "arrival": "14:00", "flying_hours": 11.0},
+    {"from": "SFO", "to": "ICN", "departure": "11:00", "arrival": "15:00", "flying_hours": 12.0},
+    {"from": "SFO", "to": "PEK", "departure": "12:00", "arrival": "16:00", "flying_hours": 12.0},
+    {"from": "SFO", "to": "PVG", "departure": "13:00", "arrival": "17:00", "flying_hours": 13.0},
+    
+    {"from": "SEA", "to": "NRT", "departure": "10:00", "arrival": "14:00", "flying_hours": 10.0},
+    {"from": "SEA", "to": "ICN", "departure": "11:00", "arrival": "15:00", "flying_hours": 11.0},
+    {"from": "SEA", "to": "PEK", "departure": "12:00", "arrival": "16:00", "flying_hours": 11.0},
+    {"from": "SEA", "to": "PVG", "departure": "13:00", "arrival": "17:00", "flying_hours": 12.0},
+    
+    # Return flights
+    {"from": "NRT", "to": "DFW", "departure": "10:00", "arrival": "14:00", "flying_hours": 14.0},
+    {"from": "ICN", "to": "DFW", "departure": "11:00", "arrival": "15:00", "flying_hours": 14.0},
+    {"from": "PEK", "to": "DFW", "departure": "12:00", "arrival": "16:00", "flying_hours": 14.0},
+    {"from": "PVG", "to": "DFW", "departure": "13:00", "arrival": "17:00", "flying_hours": 14.0},
+    
+    {"from": "NRT", "to": "LAX", "departure": "10:00", "arrival": "14:00", "flying_hours": 11.0},
+    {"from": "ICN", "to": "LAX", "departure": "11:00", "arrival": "15:00", "flying_hours": 12.0},
+    {"from": "PEK", "to": "LAX", "departure": "12:00", "arrival": "16:00", "flying_hours": 12.0},
+    {"from": "PVG", "to": "LAX", "departure": "13:00", "arrival": "17:00", "flying_hours": 13.0},
+    
+    {"from": "NRT", "to": "SFO", "departure": "10:00", "arrival": "14:00", "flying_hours": 11.0},
+    {"from": "ICN", "to": "SFO", "departure": "11:00", "arrival": "15:00", "flying_hours": 12.0},
+    {"from": "PEK", "to": "SFO", "departure": "12:00", "arrival": "16:00", "flying_hours": 12.0},
+    {"from": "PVG", "to": "SFO", "departure": "13:00", "arrival": "17:00", "flying_hours": 13.0},
+    
+    {"from": "NRT", "to": "SEA", "departure": "10:00", "arrival": "14:00", "flying_hours": 10.0},
+    {"from": "ICN", "to": "SEA", "departure": "11:00", "arrival": "15:00", "flying_hours": 11.0},
+    {"from": "PEK", "to": "SEA", "departure": "12:00", "arrival": "16:00", "flying_hours": 11.0},
+    {"from": "PVG", "to": "SEA", "departure": "13:00", "arrival": "17:00", "flying_hours": 12.0},
 ] 

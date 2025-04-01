@@ -1,49 +1,68 @@
 # Flight Reachability Map
 
-An interactive visualization tool that shows reachable destinations from a starting airport based on flying time. Built with Flask and D3.js.
+An interactive web application that visualizes reachable destinations from any major airport worldwide. The application shows direct flights, one-stop flights, and multi-stop flights with different colors and provides detailed information about flight paths and layovers.
 
 ## Features
 
-- Interactive world map showing reachable destinations
-- Time slider to adjust the maximum flying time (0-48 hours)
-- Visual representation of flight paths with intermediate stops
-- Detailed tooltips showing flight information and layovers
-- Real-time updates as you adjust the flying time
+- Interactive world map visualization
+- Real-time flight path display
+- Color-coded flight paths:
+  - Cyan: Direct flights
+  - Blue: One-stop flights
+  - Green: Multi-stop flights
+- Detailed flight information including:
+  - Total flying time
+  - Number of hops
+  - Layover details
+  - Departure and arrival times
+- Time slider to explore different flight durations
+- Animation feature to visualize flight expansion
+- Zoom and pan capabilities
+- Mobile-responsive design
 
-## Installation
+## Technology Stack
+
+- Backend: Python/Flask
+- Frontend: D3.js for visualization
+- Deployment: Render.com
+
+## Local Development
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/flight-reachability-map.git
+git clone <repository-url>
 cd flight-reachability-map
 ```
 
-2. Install dependencies:
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+4. Run the application:
 ```bash
 python app.py
 ```
 
-4. Open your browser and navigate to `http://localhost:5000`
+5. Open your browser and navigate to `http://localhost:5000`
 
-## Usage
+## Deployment
 
-1. Use the time slider to adjust the maximum flying time
-2. Hover over destinations to see detailed flight information
-3. Green dots indicate reachable destinations
-4. Gray dots indicate unreachable destinations
-5. Gold dots show intermediate stops/layovers
+The application is deployed on Render.com. To deploy your own instance:
 
-## Technologies Used
-
-- Python/Flask for the backend
-- D3.js for data visualization
-- TopoJSON for map data
-- HTML5/CSS3 for the frontend
+1. Create a Render.com account
+2. Connect your GitHub repository
+3. Create a new Web Service
+4. Configure the service:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn app:app`
+5. Deploy!
 
 ## License
 
